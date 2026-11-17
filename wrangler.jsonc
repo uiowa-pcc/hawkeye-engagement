@@ -12,7 +12,7 @@
     {
       "binding": "DB",
       "database_name": "hawkeye-engagement",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_id": "4039c55d-0243-4f01-835a-39f519eca7fc",
       "migrations_dir": "migrations"
     }
   ],
