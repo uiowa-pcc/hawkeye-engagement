@@ -1,5 +1,4 @@
-import {createRemoteJWKSet, jwtVerify} from 'jose';
-const keys = new Map();
+// Public demonstration only. Use fictional records.
 const json = (value, status=200) => Response.json(value, {status, headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export function contactInput(input) {
   if (!input || typeof input !== 'object') throw new Error('Invalid contact.');
@@ -23,21 +22,9 @@ export function interactionInput(input) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(row.interaction_date) || !Number.isFinite(Date.parse(row.interaction_date)) || new Date(row.interaction_date).toISOString().slice(0,10) !== row.interaction_date) throw new Error('Invalid interaction date.');
   return row;
 }
-async function authorized(request, env) {
-  const host = new URL(request.url).hostname;
-  if (env.LOCAL_DEV === 'true' && ['localhost','127.0.0.1','[::1]'].includes(host)) return true;
-  if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD || env.ACCESS_TEAM_DOMAIN.includes('YOUR-TEAM') || env.ACCESS_AUD.includes('REPLACE_')) return false;
-  const issuer = env.ACCESS_TEAM_DOMAIN.replace(/\/$/,'');
-  if (!keys.has(issuer)) keys.set(issuer, createRemoteJWKSet(new URL(issuer + '/cdn-cgi/access/certs')));
-  try {
-    await jwtVerify(request.headers.get('Cf-Access-Jwt-Assertion') || '', keys.get(issuer), {issuer, audience:env.ACCESS_AUD, algorithms:['RS256']});
-    return true;
-  } catch {return false;}
-}
 const insertContact = (db, row, ignore=false) => db.prepare(`INSERT ${ignore?'OR IGNORE ':''}INTO contacts (id,name,email,title,department,college) VALUES (?,?,?,?,?,?)`).bind(row.id,row.name,row.email,row.title,row.department,row.college);
 export default {
   async fetch(request, env) {
-    if (!await authorized(request, env)) return json({error:'Sign-in required. Configure Cloudflare Access and reload this page.'},401);
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     if (request.method === 'POST') {
